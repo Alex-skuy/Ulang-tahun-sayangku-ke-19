@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For You ❤️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Quicksand:wght@500&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- RESET & BASIC --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(to right, #eaddcf, #e2c2b3);
+            color: #5d4037;
+            overflow: hidden; height: 100vh; width: 100vw; position: relative; 
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        /* --- LOADING SCREEN --- */
+        #loader-wrapper {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #eaddcf; z-index: 9999;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+            transition: opacity 0.5s ease-out;
+        }
+        .loader-heart { font-size: 3rem; color: #8d6e63; margin-bottom: 20px; animation: heartbeat 1.5s infinite; }
+        .progress-bar { width: 200px; height: 4px; background: rgba(141, 110, 99, 0.3); border-radius: 10px; overflow: hidden; position: relative; }
+        .progress-fill { height: 100%; background: #8d6e63; width: 0%; transition: width 0.2s; }
+        .loading-text { margin-top: 10px; font-size: 0.9rem; color: #5d4037; font-weight: bold; }
+
+        /* --- PARTICLES --- */
+        .heart-particle { position: fixed; bottom: -10px; color: #d35400; z-index: 3000; pointer-events: none; animation: floatUp linear forwards; }
+        @keyframes floatUp { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; } }
+
+        /* --- 1. OVERLAY TOMBOL START --- */
+        #overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: transparent; z-index: 2000; 
+            display: none; /* Default Hidden */
+            justify-content: center; align-items: center; 
+            opacity: 0; transition: opacity 1s; 
+        }
+
+        /* --- 2. INTRO NGETIK --- */
+        #intro-section { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: transparent; z-index: 1500; 
+            display: none; 
+            justify-content: center; align-items: center; text-align: center; flex-direction: column; padding: 20px; 
+        }
+        #typewriter-text { 
+            font-size: 1.8rem; line-height: 1.6; max-width: 800px; 
+            border-right: 2px solid #8d6e63; color: #5d4037; 
+            white-space: pre-wrap; margin-bottom: 30px; min-height: 50px; 
+            font-family: 'Caveat', cursive; font-weight: bold; 
+        }
+
+        /* --- 3. AMPLOP --- */
+        #envelope-section { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 1450; display: none; justify-content: center; align-items: center; perspective: 1000px; }
+        .envelope-wrapper { position: relative; width: 320px; height: 220px; cursor: pointer; transition: transform 1s ease-in-out; }
+        .envelope-back { position: absolute; bottom: 0; width: 100%; height: 100%; background: #d7ccc8; border-radius: 0 0 10px 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .paper { position: absolute; bottom: 0; left: 5%; width: 90%; height: 90%; background: #fffdf5; transition: transform 1s ease-in-out, height 1s ease-in-out, width 1s ease-in-out, top 1s ease-in-out, left 1s ease-in-out; z-index: 1; border-radius: 5px; overflow: hidden; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        .envelope-front { position: absolute; bottom: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+        .envelope-front::before { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 0; border-style: solid; border-width: 220px 160px 0 0; border-color: transparent transparent transparent #efebe9; }
+        .envelope-front::after { content: ''; position: absolute; bottom: 0; right: 0; width: 0; height: 0; border-style: solid; border-width: 0 160px 220px 0; border-color: transparent #efebe9 transparent transparent; }
+        .envelope-bottom-flap { position: absolute; bottom: 0; left: 0; width: 100%; height: 110px; background: #d7ccc8; clip-path: polygon(0% 100%, 50% 0%, 100% 100%); z-index: 4; }
+        .envelope-top-flap { position: absolute; top: 0; width: 100%; height: 110px; background: #bcaaa4; clip-path: polygon(0% 0%, 50% 100%, 100% 0%); transform-origin: top; transition: transform 0.6s ease-in-out, z-index 0.2s; z-index: 5; }
+        .heart-seal { position: absolute; top: 90px; left: 50%; transform: translate(-50%, -50%); font-size: 30px; color: #8d6e63; z-index: 6; text-shadow: 0 2px 2px rgba(0,0,0,0.1); transition: opacity 0.5s; }
+
+        .open-state .envelope-top-flap { transform: rotateX(180deg); z-index: 0; }
+        .open-state .heart-seal { opacity: 0; }
+        .open-state .paper { transform: translateY(-120px); z-index: 6; }
+        .zoom-mode .paper { transform: translateY(0) scale(1) !important; position: fixed; top: 10%; left: 50%; width: 90%; height: 80vh; margin-left: -45%; z-index: 9999; box-shadow: 0 20px 50px rgba(0,0,0,0.15); border-radius: 5px; background: #fffdf5; }
+        .zoom-mode .envelope-back, .zoom-mode .envelope-front, .zoom-mode .envelope-top-flap, .zoom-mode .envelope-bottom-flap { opacity: 0; transition: opacity 0.5s; }
+
+        /* --- ISI SURAT --- */
+        .paper-content { padding: 40px; width: 100%; height: 100%; overflow-y: auto; text-align: left; opacity: 0; transition: opacity 1s 1.5s; }
+        .paper-content p { font-family: 'Caveat', cursive; font-size: 1.8rem; color: #4e342e; line-height: 1.5; margin-bottom: 20px; font-weight: 600; opacity: 0; animation: textFadeIn 0.8s forwards; }
+        .paper-content p:nth-child(1) { animation-delay: 2s; }
+        .paper-content p:nth-child(2) { animation-delay: 2.5s; }
+        .paper-content p:nth-child(3) { animation-delay: 3s; }
+        .paper-content p:nth-child(4) { animation-delay: 3.5s; }
+        .paper-content p:nth-child(5) { animation-delay: 4s; }
+        .paper-content::-webkit-scrollbar { width: 8px; }
+        .paper-content::-webkit-scrollbar-track { background: transparent; }
+        .paper-content::-webkit-scrollbar-thumb { background-color: #d7ccc8; border-radius: 20px; border: 3px solid transparent; background-clip: content-box; }
+
+        /* --- SLIDESHOW --- */
+        #slideshow-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #000; }
+        .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 1.5s ease-in-out; }
+        .slide img { width: 100%; height: 100%; object-fit: cover; }
+        .slide.active { opacity: 1; z-index: 1; }
+        .slide.active img { animation: kenburns 20s infinite alternate linear; }
+        #dark-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 500; opacity: 0; transition: opacity 2s; pointer-events: none; }
+        #final-message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; text-align: center; width: 90%; opacity: 0; transition: opacity 3s 1s; }
+        #final-message h2 { font-size: 3rem; color: white; margin-bottom: 10px; font-family: 'Caveat', cursive; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        #final-message p { color: #f0f0f0; }
+
+        /* TOMBOL */
+        .btn-custom { padding: 12px 30px; font-size: 1rem; background: transparent; border: 2px solid #8d6e63; color: #5d4037; cursor: pointer; border-radius: 30px; margin-top: 10px; transition: 0.3s; font-family: 'Quicksand', sans-serif; font-weight: bold; }
+        .btn-custom:hover { background: #8d6e63; color: #fff; transform: scale(1.05); }
+        .hidden-btn { display: none; opacity: 0; transition: opacity 1s; }
+
+        @keyframes textFadeIn { to { opacity: 1; transform: translateY(0); } }
+        @keyframes kenburns { 0% { transform: scale(1) translate(0,0); } 100% { transform: scale(1.15) translate(-1%, -1%); } }
+        @keyframes heartbeat { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="loader-wrapper">
+        <div class="loader-heart">❤</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="loading-text" id="loading-text">Memuat Kenangan... 0%</div>
+    </div>
+
+    <audio id="sfx-type" src="ketik.mp3"></audio>
+    <audio id="bgm" src="memori_baik.mp3" loop></audio>
+
+    <div id="overlay">
+        <button class="btn-custom" style="font-size: 1.5rem; padding: 20px 40px;" onclick="mulaiIntro()">📩 1 PESAN MASUK [BUKA]</button>
+    </div>
+
+    <div id="intro-section">
+        <div id="typewriter-text"></div>
+        <button id="btn-to-letter" class="btn-custom hidden-btn" onclick="tampilkanAmplop()">BACA SURAT &rarr;</button>
+    </div>
+
+    <div id="envelope-section">
+        <div class="envelope-wrapper" id="myEnvelope" onclick="bukaSurat()">
+            <div class="envelope-back"></div>
+            <div class="paper" id="mainPaper">
+                <div class="paper-content">
+                    <span style="font-size: 3rem; display: block; margin-bottom: 20px; text-align: center;">💌</span>
+                    <p>Haloo Kanjeng ndorokuu,udah makin jadi tante tante ajaa nih upzzz</p>
+                    <p>Selamat ulang tahun kee 19 yaaa sayangkuuu</p>
+                    <P>Nah buat pembuka aku mau kasih yang kanjeng minta yaituu evaluasi bulanan kanjengg xixixi</P>
+                    <p>1. Pola makan tidak sehatt.(kanjeng sukaa makannya sembarangan sekarang maah,kadang seblak,cuanki,seblak,seblak,geprekk,trus yang terakhir apaan bebrapa hari bertrut-turut makan mie doaangg)perbaiki lagii nantii yaaww sayanggg. </p>
+                    <p>2. Walaupun udah jarang terlihat kanjeng masih overthinking,kanjeng masih memikirkan masa lalu yang bukan sama sekali yang bisa kanjeng kendalikan,kita emang ngga bisa mengendalikan orang lain dan situasi yang sudah terjadi,tapi setidaknya kendalikan diri sendiri ya sayangg.</p>
+                    <P>3. Kanjengg sekarang jadi kurang kabarin akuu, walaupun kadang aku juga begitu sih hehehe,tapi ngga kaya biasanya tauu,kanjeng biasanya mau kemana giu kabarin akuu.</P>
+                    <p>sudaah,kanjeng itu sempurna bagiku,kanjeng itu segalanya bagiku,kanjeng yang memberikan tujuan dihidupku,tetap sama aku terus ya sayang?</p>
+                    <p>Semoga diumur kanjeng yang semakin menjadi tante tante ini,kanjeng bisa lebih baik lagi kedepannnya dan makin cintaa sama akuu hehe.</p>
+                    <p>Terimakasih sudah membawaku ke fase terbaik dimana kita saling bercanda saling bertukar argumen saling memberikan kasih sayang, harus ku akui kanjeng banyak merubah hidupku,tanpa kanjeng sadari aku menjadi lebih baik karena bersama kanjeng,dulu mah aku apaan orang yang kerjaannya cuma main main doang,setelah sama kanjeng semuanya berubah,kanjeng banyak sekali merubahku,kanjeng memberiku tujuan hidup yang tidak pernah diberikan orang lain.</p>
+                    <p>Terimakasih udah bisa sejauh ini sama orang menyebalkan yang kalo jalan berdua suka duluan dan kalo kanjeng bilang terserah malah masih nanya teruss hehe</p>
+                    <p>Makasih udah jadi orang yang paling sabar ngadepin aku. Makasih udah selalu ada buat aku.</p>
+                    <p>Semoga kita tetap seperti ini sampai nanti tua,kita menikah punya anak punya cucu,memang berat, tapi kalo kita melaluinya bersama sama pasti bisaa,karna bersama kanjeng aku selalu merasa nyaman aman tentram</p>
+                    <p>Aku juga minta maaf kalau aku masih banyak kurangnya. Tapi aku janji, aku bakal selalu berusaha buat perbaiki diri dan bikin kanjeng senyum setiap harii nanti nyaaa.</p>
+                    <p>Semoga di umur yang baru ini, kanjeng makin bahagia, makin sehat, dan semua impian kanjeng tercapai.</p>
+                    <p>I love you, always. Anisa Nur Hasanah ❤️</p>
+                    <div style="text-align: center; margin-top: 40px;">
+                        <button class="btn-custom" onclick="event.stopPropagation(); playSlideshow()">Balik Ke Masa Lalu Bahagia Kita Dulu yukss✨</button>
+                    </div>
+                </div>
+            </div>
+            <div class="envelope-front"></div>
+            <div class="envelope-bottom-flap"></div>
+            <div class="envelope-top-flap"><div class="heart-seal">❤</div></div>
+        </div>
+        <div id="click-hint" style="position: absolute; bottom: 80px; color: #5d4037; animation: blink 2s infinite; font-weight: bold;">(Klik amplopnya)</div>
+    </div>
+
+    <div id="slideshow-container"></div>
+    <div id="dark-overlay"></div>
+    <div id="final-message">
+        <h2>Happy Birthday</h2>
+        <p>Let's make more memories.</p>
+    </div>
+
+    <script>
+        // CONFIG
+        const kalimatIntro = "Haloo tanteee...\nAda kiriman spesial buat tantee dari caim tercintaa niihh...\n(Gedein volume atau pake headset dulu yaawww)";
+        const totalFoto = 30; 
+        const durasiPerFoto = 6000; 
+        
+        const sfx = document.getElementById('sfx-type');
+        const bgm = document.getElementById('bgm');
+        
+        // --- LOGIC LOADING AMAN (FIXED) ---
+        let loadedCount = 0;
+        const totalAssets = totalFoto + 2; 
+        const loaderText = document.getElementById('loading-text');
+        const progressFill = document.getElementById('progress-fill');
+        const loaderWrapper = document.getElementById('loader-wrapper');
+        const startOverlay = document.getElementById('overlay');
+        
+        // Timer Fallback (Disimpan di variable biar bisa dimatiin)
+        let fallbackTimer = setTimeout(() => {
+            console.log("Loading kelamaan, paksa buka...");
+            finishLoading(); 
+        }, 10000); // 10 detik max nunggu
+
+        function updateProgress() {
+            loadedCount++;
+            const percent = Math.floor((loadedCount / totalAssets) * 100);
+            progressFill.style.width = percent + "%";
+            loaderText.innerText = `Memuat Kenangan... ${percent}%`;
+
+            if (loadedCount >= totalAssets) {
+                // Kalo loading beres normal, matiin timer fallback biar gak double
+                clearTimeout(fallbackTimer);
+                finishLoading();
+            }
+        }
+
+        function finishLoading() {
+            // Cegah fungsi ini jalan 2x
+            if (loaderWrapper.style.display === 'none') return;
+
+            // Fade out loader
+            loaderWrapper.style.opacity = '0';
+            setTimeout(() => {
+                loaderWrapper.style.display = 'none';
+                
+                // Munculin tombol start (Overlay)
+                startOverlay.style.display = 'flex';
+                // Trigger reflow biar transisi opacity jalan
+                setTimeout(() => { startOverlay.style.opacity = 1; }, 50);
+            }, 500);
+        }
+
+        // Loop Load Gambar
+        for (let i = 1; i <= totalFoto; i++) {
+            const img = new Image();
+            img.onload = updateProgress;
+            img.onerror = updateProgress; // Tetap jalan walau error
+            img.src = `foto${i}.jpg`;
+        }
+
+        bgm.oncanplaythrough = updateProgress;
+        sfx.oncanplaythrough = updateProgress;
+
+        // --- PARTICLE ---
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart-particle');
+            heart.innerHTML = '❤'; 
+            heart.style.left = Math.random() * 100 + 'vw';
+            const size = Math.random() * 20 + 10;
+            heart.style.fontSize = size + 'px';
+            const duration = Math.random() * 5 + 3;
+            heart.style.animationDuration = duration + 's';
+            document.body.appendChild(heart);
+            setTimeout(() => { heart.remove(); }, duration * 1000);
+        }
+        setInterval(createHeart, 400);
+
+        // --- MAIN LOGIC ---
+        function mulaiIntro() {
+            // Hilangkan Tombol Start
+            const overlay = document.getElementById('overlay');
+            overlay.style.opacity = '0';
+            
+            setTimeout(() => {
+                overlay.style.display = 'none'; // Hilang total
+                
+                // Baru munculin Intro Ngetik
+                const intro = document.getElementById('intro-section');
+                intro.style.display = 'flex';
+                
+                generateSlides(); 
+                ngetik(0); // Mulai ngetik
+            }, 1000);
+        }
+
+        function ngetik(index) {
+            const textEl = document.getElementById('typewriter-text');
+            if (index < kalimatIntro.length) {
+                textEl.innerHTML += kalimatIntro.charAt(index);
+                if (kalimatIntro.charAt(index) !== ' ' && kalimatIntro.charAt(index) !== '\n') {
+                    sfx.currentTime = 0; sfx.play().catch(()=>{});
+                }
+                setTimeout(() => ngetik(index + 1), 70);
+            } else {
+                sfx.pause(); sfx.currentTime = 0;
+                const btn = document.getElementById('btn-to-letter');
+                btn.style.display = 'block';
+                setTimeout(() => { btn.style.opacity = 1; }, 100);
+            }
+        }
+
+        function tampilkanAmplop() {
+            document.getElementById('intro-section').style.display = 'none';
+            document.getElementById('envelope-section').style.display = 'flex';
+            bgm.volume = 0.6; bgm.play();
+        }
+
+        function bukaSurat() {
+            const envelope = document.getElementById('myEnvelope');
+            const hint = document.getElementById('click-hint');
+            if (envelope.classList.contains('open-state')) return;
+            hint.style.display = 'none';
+            envelope.classList.add('open-state');
+            setTimeout(() => {
+                envelope.classList.add('zoom-mode');
+                document.querySelector('.paper-content').style.opacity = 1;
+            }, 1000);
+        }
+
+        function playSlideshow() {
+            const paper = document.getElementById('mainPaper');
+            paper.style.transition = "transform 1s, opacity 1s";
+            paper.style.transform = "translateY(100vh)"; 
+            paper.style.opacity = 0;
+
+            setTimeout(() => {
+                document.getElementById('envelope-section').style.display = 'none';
+                document.getElementById('dark-overlay').style.opacity = '1';
+                document.getElementById('final-message').style.opacity = '1';
+                showNextSlide();
+                setInterval(showNextSlide, durasiPerFoto); 
+            }, 1000);
+        }
+
+        let currentSlideIndex = 0;
+        let slides = [];
+        const slideshowContainer = document.getElementById('slideshow-container');
+
+        function generateSlides() {
+            for (let i = 1; i <= totalFoto; i++) {
+                const div = document.createElement('div');
+                div.className = 'slide';
+                div.innerHTML = `<img src="foto${i}.jpg" alt="Memory ${i}">`;
+                slideshowContainer.appendChild(div);
+            }
+            slides = document.querySelectorAll('.slide');
+        }
+
+        function showNextSlide() {
+            const currentActive = document.querySelector('.slide.active');
+            if (currentActive) { currentActive.classList.remove('active'); }
+            slides[currentSlideIndex].classList.add('active');
+            currentSlideIndex = (currentSlideIndex + 1) % slides.length;
+        }
+    </script>
+</body>
+</html>
